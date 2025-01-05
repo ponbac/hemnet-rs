@@ -19,7 +19,7 @@ async fn main() -> Result<()> {
 
     // Get sold listings
     let sold_listings: Vec<SaleCard> =
-        listing::fetch_all_listings(&client, 1, None, &location_ids).await?;
+        listing::fetch_all_listings(&client, 1, Some(3), &location_ids).await?;
     println!("Found total {} sold listings", sold_listings.len());
 
     // Convert to CSV rows and save
