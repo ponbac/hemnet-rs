@@ -6,7 +6,7 @@ use crate::{
 };
 
 pub trait Listing: serde::Serialize {
-    fn id(&self) -> String;
+    fn id(&self) -> &str;
 
     async fn fetch_page(
         client: &HemnetClient,
@@ -18,8 +18,8 @@ pub trait Listing: serde::Serialize {
 }
 
 impl Listing for ListingCard {
-    fn id(&self) -> String {
-        self.id.clone()
+    fn id(&self) -> &str {
+        &self.id
     }
 
     async fn fetch_page(
@@ -32,8 +32,8 @@ impl Listing for ListingCard {
 }
 
 impl Listing for SaleCard {
-    fn id(&self) -> String {
-        self.listing_id.clone()
+    fn id(&self) -> &str {
+        &self.listing_id
     }
 
     async fn fetch_page(
