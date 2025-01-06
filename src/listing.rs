@@ -1,4 +1,6 @@
 use anyhow::Result;
+use rand::Rng;
+use std::time::Duration;
 
 use crate::{
     client::HemnetClient,
@@ -47,21 +49,20 @@ impl Listing for SaleCard {
 
 pub async fn fetch_all_listings<T: Listing>(
     client: &HemnetClient,
+    location_name: &str,
     start_page: u32,
     max_page: Option<u32>,
     location_ids: &[&str],
+    random_sleep: bool,
 ) -> Result<Vec<T>> {
-    use rand::Rng;
-    use std::time::Duration;
-    use tokio::time::sleep;
-
     let mut listings = Vec::new();
     let mut page = start_page;
 
     while max_page.map_or(true, |max| page <= max) {
         let page_listings = T::fetch_page(client, location_ids, page).await?;
         println!(
-            "Found {} listings on page {}, total listings: {}",
+            "{}: Found {} listings on page {}, total listings: {}",
+            location_name,
             page_listings.len(),
             page,
             listings.len() + page_listings.len()
@@ -85,7 +86,10 @@ pub async fn fetch_all_listings<T: Listing>(
         listings.extend(unique_listings);
         page += 1;
 
-        sleep(Duration::from_secs(rand::thread_rng().gen_range(1..=5))).await;
+        if random_sleep {
+            let wait_time = rand::thread_rng().gen_range(1000..5000);
+            tokio::time::sleep(Duration::from_millis(wait_time)).await;
+        }
     }
 
     Ok(listings)

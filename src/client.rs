@@ -6,6 +6,7 @@ use crate::models::{HemnetListingsResponse, ListingCard, SaleCard};
 
 const BASE_URL: &str = "https://www.hemnet.se/_next/data/ZbTIGtigbip8_BxHWbd_z";
 
+#[derive(Clone)]
 pub struct HemnetClient {
     client: reqwest::Client,
 }
@@ -126,9 +127,9 @@ impl HemnetClient {
             }
         }
 
-        if sold_listings.is_empty() {
-            println!("No sold listings found, response: {}", raw_data);
-        }
+        // if sold_listings.is_empty() {
+        //     println!("No sold listings found, response: {}", raw_data);
+        // }
 
         Ok(sold_listings)
     }

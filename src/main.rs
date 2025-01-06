@@ -1,4 +1,7 @@
+use std::sync::Arc;
+
 use anyhow::Result;
+use futures::future::join_all;
 
 mod client;
 mod listing;
@@ -6,7 +9,7 @@ mod models;
 mod storage;
 
 use client::HemnetClient;
-use models::SaleCard;
+use models::{CsvRow, SaleCard};
 
 const LOCATIONS: &[(&str, &str)] = &[
     ("474879", "Västermalm-Norrmalm"),
@@ -20,31 +23,58 @@ const LOCATIONS: &[(&str, &str)] = &[
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let client = HemnetClient::new()?;
+    let client = Arc::new(HemnetClient::new()?);
 
-    let mut csv_rows = Vec::new();
-    for (id, name) in LOCATIONS {
-        println!("Fetching sold listings for {}", name);
-        let listings: Vec<SaleCard> = listing::fetch_all_listings(&client, 1, None, &[id]).await?;
-        println!("Found {} listings for {}", listings.len(), name);
+    // Create futures for all locations
+    let futures = LOCATIONS.iter().map(|(id, name)| {
+        let cloned_client = client.clone();
+        tokio::spawn(async move {
+            println!("Fetching sold listings for {}", name);
+            let listings: Vec<SaleCard> =
+                listing::fetch_all_listings(&cloned_client, name, 1, None, &[id], true).await?;
+            println!("Found {} listings for {}", listings.len(), name);
 
-        csv_rows.extend(
-            listings
-                .into_iter()
-                .filter_map(|l| match l.to_csv_row(Some(name)) {
-                    Ok(row) => Some(row),
-                    Err(e) => {
-                        println!(
-                            "Error converting listing to CSV row: {}, listing: {:?}",
-                            e, l
-                        );
-                        None
-                    }
-                }),
-        );
-    }
+            Ok::<_, anyhow::Error>(listings_to_csv_rows(listings, name))
+        })
+    });
+
+    // Wait for all futures to complete
+    let csv_rows = join_all(futures)
+        .await
+        .into_iter()
+        .filter_map(|join_result| match join_result {
+            Ok(location_result) => match location_result {
+                Ok(rows) => Some(rows),
+                Err(e) => {
+                    eprintln!("Error fetching location: {}", e);
+                    None
+                }
+            },
+            Err(e) => {
+                eprintln!("Task failed: {}", e);
+                None
+            }
+        })
+        .flatten()
+        .collect::<Vec<_>>();
 
     storage::save_listings_to_csv(&csv_rows, "sold")?;
 
     Ok(())
+}
+
+fn listings_to_csv_rows(listings: Vec<SaleCard>, location: &str) -> Vec<CsvRow> {
+    listings
+        .into_iter()
+        .filter_map(|l: SaleCard| match l.to_csv_row(Some(location)) {
+            Ok(row) => Some(row),
+            Err(e) => {
+                println!(
+                    "Error converting listing to CSV row: {}, listing: {:?}",
+                    e, l
+                );
+                None
+            }
+        })
+        .collect()
 }
