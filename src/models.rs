@@ -179,7 +179,7 @@ impl SaleCard {
                     .map(|text| format!("{}:{}", label.category, text))
             })
             .collect::<Vec<_>>()
-            .join(";");
+            .join(" ");
 
         let square_meter_price_cleaned = self.square_meter_price.replace("kr/m²", "");
 

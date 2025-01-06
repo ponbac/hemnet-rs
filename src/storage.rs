@@ -22,6 +22,7 @@ where
 
     let mut wtr = csv::WriterBuilder::new()
         .has_headers(true)
+        .delimiter(b';')
         .from_writer(file);
 
     for listing in listings {
