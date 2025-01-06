@@ -49,11 +49,7 @@ impl HemnetClient {
         Ok(Self { client })
     }
 
-    pub async fn get_listings(
-        &self,
-        location_ids: &[String],
-        page: u32,
-    ) -> Result<Vec<ListingCard>> {
+    pub async fn get_listings(&self, location_ids: &[&str], page: u32) -> Result<Vec<ListingCard>> {
         let mut params = HashMap::new();
         params.insert("item_types[]", "bostadsratt");
         params.insert("living_area_min", "40");
@@ -61,7 +57,7 @@ impl HemnetClient {
         params.insert("page", &page_str);
 
         for location_id in location_ids {
-            params.insert("location_ids[]", location_id.as_str());
+            params.insert("location_ids[]", location_id);
         }
 
         let url = format!("{}/bostader.json", BASE_URL);
@@ -92,7 +88,7 @@ impl HemnetClient {
 
     pub async fn get_sold_listings(
         &self,
-        location_ids: &[String],
+        location_ids: &[&str],
         page: u32,
     ) -> Result<Vec<SaleCard>> {
         let mut params = HashMap::new();
@@ -102,7 +98,7 @@ impl HemnetClient {
         params.insert("page", &page_str);
 
         for location_id in location_ids {
-            params.insert("location_ids[]", location_id.as_str());
+            params.insert("location_ids[]", location_id);
         }
 
         let url = format!("{}/salda/bostader.json", BASE_URL);

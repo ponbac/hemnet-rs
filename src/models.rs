@@ -75,6 +75,7 @@ pub struct CsvRow {
     pub asking_price: Option<i64>,
     pub final_price: Option<i64>,
     pub living_area: Option<f64>,
+    pub location: Option<String>,
     pub location_description: String,
     pub fee: Option<i64>,
     pub square_meter_price: Option<i64>,
@@ -132,7 +133,7 @@ pub struct SaleCard {
 }
 
 impl SaleCard {
-    pub fn to_csv_row(&self) -> anyhow::Result<CsvRow> {
+    pub fn to_csv_row(&self, location: Option<&str>) -> anyhow::Result<CsvRow> {
         let clean_price = |price: &String| -> Option<i64> {
             if price.contains("saknas") {
                 return None;
@@ -190,6 +191,7 @@ impl SaleCard {
             asking_price: clean_price(&self.asking_price),
             final_price: clean_price(&self.final_price),
             living_area,
+            location: location.map(|s| s.to_string()),
             location_description: self.location_description.clone(),
             fee: self.fee.as_ref().and_then(clean_price),
             square_meter_price: clean_price(&square_meter_price_cleaned),
