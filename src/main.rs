@@ -25,8 +25,7 @@ async fn main() -> Result<()> {
     let mut csv_rows = Vec::new();
     for (id, name) in LOCATIONS {
         println!("Fetching sold listings for {}", name);
-        let listings: Vec<SaleCard> =
-            listing::fetch_all_listings(&client, 1, Some(1), &[id]).await?;
+        let listings: Vec<SaleCard> = listing::fetch_all_listings(&client, 1, None, &[id]).await?;
         println!("Found {} listings for {}", listings.len(), name);
 
         csv_rows.extend(
