@@ -10,7 +10,7 @@ pub trait Listing: serde::Serialize {
 
     async fn fetch_page(
         client: &HemnetClient,
-        location_ids: &[String],
+        location_ids: &[&str],
         page: u32,
     ) -> Result<Vec<Self>>
     where
@@ -24,7 +24,7 @@ impl Listing for ListingCard {
 
     async fn fetch_page(
         client: &HemnetClient,
-        location_ids: &[String],
+        location_ids: &[&str],
         page: u32,
     ) -> Result<Vec<Self>> {
         client.get_listings(location_ids, page).await
@@ -38,7 +38,7 @@ impl Listing for SaleCard {
 
     async fn fetch_page(
         client: &HemnetClient,
-        location_ids: &[String],
+        location_ids: &[&str],
         page: u32,
     ) -> Result<Vec<Self>> {
         client.get_sold_listings(location_ids, page).await
@@ -49,7 +49,7 @@ pub async fn fetch_all_listings<T: Listing>(
     client: &HemnetClient,
     start_page: u32,
     max_page: Option<u32>,
-    location_ids: &[String],
+    location_ids: &[&str],
 ) -> Result<Vec<T>> {
     use rand::Rng;
     use std::time::Duration;
@@ -64,7 +64,7 @@ pub async fn fetch_all_listings<T: Listing>(
             "Found {} listings on page {}, total listings: {}",
             page_listings.len(),
             page,
-            listings.len()
+            listings.len() + page_listings.len()
         );
 
         let unique_listings: Vec<_> = page_listings
