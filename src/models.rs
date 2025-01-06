@@ -112,7 +112,7 @@ pub struct SaleCard {
     pub square_meter_price: String,
     #[serde(rename = "housingForm")]
     pub housing_form: HousingForm,
-    pub rooms: String,
+    pub rooms: Option<String>,
     #[serde(rename = "landArea")]
     pub land_area: Option<String>,
     #[serde(rename = "priceChange")]
@@ -164,6 +164,7 @@ impl SaleCard {
         let living_area = self
             .living_area
             .replace("m²", "")
+            .replace(',', ".")
             .replace([' ', '\u{00A0}'], "")
             .parse::<f64>()
             .ok();
@@ -195,7 +196,7 @@ impl SaleCard {
             location_description: self.location_description.clone(),
             fee: self.fee.as_ref().and_then(clean_price),
             square_meter_price: clean_price(&square_meter_price_cleaned),
-            rooms: self.rooms.clone(),
+            rooms: self.rooms.clone().unwrap_or_default(),
             price_change: self.price_change.as_ref().and_then(clean_percentage),
             broker_agency_name: self.broker_agency_name.clone(),
             broker_name: self.broker_name.clone(),

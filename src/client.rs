@@ -127,10 +127,7 @@ impl HemnetClient {
         }
 
         if sold_listings.is_empty() {
-            println!(
-                "No sold listings found, response: {}",
-                serde_json::to_string_pretty(&raw_data)?
-            );
+            println!("No sold listings found, response: {}", raw_data);
         }
 
         Ok(sold_listings)
