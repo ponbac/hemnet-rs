@@ -1,8 +1,8 @@
-use std::collections::HashMap;
 use anyhow::Result;
 use reqwest::header::{HeaderMap, HeaderValue};
+use std::collections::HashMap;
 
-use crate::models::{ListingCard, SaleCard, HemnetListingsResponse};
+use crate::models::{HemnetListingsResponse, ListingCard, SaleCard};
 
 const BASE_URL: &str = "https://www.hemnet.se/_next/data/ZbTIGtigbip8_BxHWbd_z";
 
@@ -14,13 +14,27 @@ impl HemnetClient {
     pub fn new() -> Result<Self> {
         let mut headers = HeaderMap::new();
         headers.insert("accept", HeaderValue::from_static("*/*"));
-        headers.insert("accept-language", HeaderValue::from_static("sv-SE,sv;q=0.5"));
+        headers.insert(
+            "accept-language",
+            HeaderValue::from_static("sv-SE,sv;q=0.5"),
+        );
         headers.insert("cookie", HeaderValue::from_static("force-light-mode=true; hn_uc_consent={}; hn_exp_kpis=366; hn_exp_noi=655; hn_exp_bau=698; hn_exp_copc=667; hn_exp_prd=640; hn_exp_nhc=798; __cfruid=cfc84fa0bbd11dc60cb72bb426ffc133c9909235-1735994010; CF_AppSession=n95f4e1a3f7fd2f56"));
         headers.insert("priority", HeaderValue::from_static("u=1, i"));
-        headers.insert("referer", HeaderValue::from_static("https://www.hemnet.se/bostader"));
-        headers.insert("sec-ch-ua", HeaderValue::from_static("\"Brave\";v=\"131\", \"Chromium\";v=\"131\", \"Not_A Brand\";v=\"24\""));
+        headers.insert(
+            "referer",
+            HeaderValue::from_static("https://www.hemnet.se/bostader"),
+        );
+        headers.insert(
+            "sec-ch-ua",
+            HeaderValue::from_static(
+                "\"Brave\";v=\"131\", \"Chromium\";v=\"131\", \"Not_A Brand\";v=\"24\"",
+            ),
+        );
         headers.insert("sec-ch-ua-mobile", HeaderValue::from_static("?0"));
-        headers.insert("sec-ch-ua-platform", HeaderValue::from_static("\"Windows\""));
+        headers.insert(
+            "sec-ch-ua-platform",
+            HeaderValue::from_static("\"Windows\""),
+        );
         headers.insert("sec-fetch-dest", HeaderValue::from_static("empty"));
         headers.insert("sec-fetch-mode", HeaderValue::from_static("cors"));
         headers.insert("sec-fetch-site", HeaderValue::from_static("same-origin"));
@@ -35,7 +49,11 @@ impl HemnetClient {
         Ok(Self { client })
     }
 
-    pub async fn get_listings(&self, location_ids: &[String], page: u32) -> Result<Vec<ListingCard>> {
+    pub async fn get_listings(
+        &self,
+        location_ids: &[String],
+        page: u32,
+    ) -> Result<Vec<ListingCard>> {
         let mut params = HashMap::new();
         params.insert("item_types[]", "bostadsratt");
         params.insert("living_area_min", "40");
@@ -47,7 +65,8 @@ impl HemnetClient {
         }
 
         let url = format!("{}/bostader.json", BASE_URL);
-        let response = self.client
+        let response = self
+            .client
             .get(&url)
             .query(&params)
             .send()
@@ -71,7 +90,11 @@ impl HemnetClient {
         Ok(listings)
     }
 
-    pub async fn get_sold_listings(&self, location_ids: &[String], page: u32) -> Result<Vec<SaleCard>> {
+    pub async fn get_sold_listings(
+        &self,
+        location_ids: &[String],
+        page: u32,
+    ) -> Result<Vec<SaleCard>> {
         let mut params = HashMap::new();
         params.insert("item_types[]", "bostadsratt");
         params.insert("living_area_min", "40");
@@ -83,27 +106,37 @@ impl HemnetClient {
         }
 
         let url = format!("{}/salda/bostader.json", BASE_URL);
-        let response = self.client
+        let response = self
+            .client
             .get(&url)
             .query(&params)
             .send()
             .await?
             .error_for_status()?;
 
-        let data: HemnetListingsResponse = response.json().await?;
-        let apollo_state = data.page_props.apollo_state;
+        let raw_data = response.text().await?;
+        let data: HemnetListingsResponse = serde_json::from_str(&raw_data)?;
 
         let mut sold_listings = Vec::new();
-        if let Some(obj) = apollo_state.extra.as_object() {
+        if let Some(obj) = data.page_props.apollo_state.extra.as_object() {
             for (key, value) in obj {
                 if key.starts_with("SaleCard:") {
                     if let Ok(sale) = serde_json::from_value(value.clone()) {
                         sold_listings.push(sale);
+                    } else {
+                        println!("Error converting sale to SaleCard: {:?}", value);
                     }
                 }
             }
         }
 
+        if sold_listings.is_empty() {
+            println!(
+                "No sold listings found, response: {}",
+                serde_json::to_string_pretty(&raw_data)?
+            );
+        }
+
         Ok(sold_listings)
     }
-} 
+}

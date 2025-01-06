@@ -203,19 +203,19 @@ impl SaleCard {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ApolloState {
     #[serde(flatten)]
     pub extra: serde_json::Value,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct PageProps {
     #[serde(rename = "__APOLLO_STATE__")]
     pub apollo_state: ApolloState,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct HemnetListingsResponse {
     #[serde(rename = "pageProps")]
     pub page_props: PageProps,
