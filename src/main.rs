@@ -4,6 +4,7 @@ use anyhow::Result;
 use futures::future::join_all;
 
 mod client;
+mod db;
 mod listing;
 mod models;
 mod storage;
@@ -58,7 +59,7 @@ async fn main() -> Result<()> {
         .flatten()
         .collect::<Vec<_>>();
 
-    storage::save_listings_to_csv(&csv_rows, "sold")?;
+    storage::save_listings(&csv_rows, "sold")?;
 
     Ok(())
 }

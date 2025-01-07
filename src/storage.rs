@@ -2,6 +2,25 @@ use anyhow::Result;
 use chrono::Local;
 use std::{fs, io::Write, path::Path};
 
+use crate::db;
+
+pub fn save_listings<T>(listings: &[T], filename_prefix: &str) -> Result<()>
+where
+    T: serde::Serialize,
+{
+    // Initialize SQLite database
+    let conn = db::init_db()?;
+    if let Ok(csv_rows) = serde_json::to_value(listings) {
+        if let Ok(csv_rows) = serde_json::from_value(csv_rows) {
+            db::save_listings_to_db(&conn, &csv_rows)?;
+        }
+    }
+
+    // Save to CSV as well
+    save_listings_to_csv(listings, filename_prefix)?;
+    Ok(())
+}
+
 pub fn save_listings_to_csv<T>(listings: &[T], filename_prefix: &str) -> Result<()>
 where
     T: serde::Serialize,
